@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+
+.vscagentrules
+memory-bank/
+vsc-agent-memory-bank-rules.md
