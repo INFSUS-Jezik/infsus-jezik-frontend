@@ -11,6 +11,15 @@ import Modal from "../components/UI/Modal";
 import ConfirmationDialog from "../components/UI/ConfirmationDialog";
 import LoadingSpinner from "../components/UI/LoadingSpinner";
 import ErrorMessage from "../components/UI/ErrorMessage";
+import { validateCourse } from "../validation/courseValidation"; // Added import
+
+// Define a type for form errors
+interface CourseFormErrors {
+    name?: string;
+    description?: string;
+    price?: string;
+    professorId?: string;
+}
 
 const CourseListPage: React.FC = () => {
     const navigate = useNavigate();
@@ -35,6 +44,7 @@ const CourseListPage: React.FC = () => {
 
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState<boolean>(false);
     const [courseToDeleteId, setCourseToDeleteId] = useState<number | null>(null);
+    const [formErrors, setFormErrors] = useState<CourseFormErrors>({}); // Added for validation errors
 
     const fetchCoursesData = async () => {
         setIsLoading(true);
@@ -82,6 +92,7 @@ const CourseListPage: React.FC = () => {
         setModalMode("add");
         setCurrentFormData(initialFormState);
         setEditingCourseId(null);
+        setFormErrors({}); // Clear errors
         setIsModalOpen(true);
     };
 
@@ -94,6 +105,7 @@ const CourseListPage: React.FC = () => {
             professorId: course.professorId,
         });
         setEditingCourseId(course.id);
+        setFormErrors({}); // Clear errors
         setIsModalOpen(true);
     };
 
@@ -101,6 +113,7 @@ const CourseListPage: React.FC = () => {
         setIsModalOpen(false);
         setCurrentFormData(initialFormState);
         setEditingCourseId(null);
+        setFormErrors({}); // Clear errors on modal close
     };
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -109,6 +122,10 @@ const CourseListPage: React.FC = () => {
             ...prev,
             [name]: name === "price" ? parseFloat(value) || 0 : value,
         }));
+        if (formErrors[name as keyof CourseFormErrors]) {
+            // Clear error for this field on change
+            setFormErrors(prev => ({ ...prev, [name]: undefined }));
+        }
     };
 
     const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -117,19 +134,30 @@ const CourseListPage: React.FC = () => {
             ...prev,
             [name]: parseInt(value, 10),
         }));
+        if (formErrors[name as keyof CourseFormErrors]) {
+            // Clear error for this field on change
+            setFormErrors(prev => ({ ...prev, [name]: undefined }));
+        }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!currentFormData.name || !currentFormData.professorId) {
-            setError("Name and Professor are required fields.");
+        const validationErrors = validateCourse(currentFormData);
+        if (Object.keys(validationErrors).length > 0) {
+            setFormErrors(validationErrors);
             return;
         }
+        setFormErrors({}); // Clear errors before submission
 
-        if (currentFormData.price < 0) {
-            setError("Price cannot be negative.");
-            return;
-        }
+        // Original validation (can be removed or kept as a fallback)
+        // if (!currentFormData.name || !currentFormData.professorId) {
+        //     setError("Name and Professor are required fields.");
+        //     return;
+        // }
+        // if (currentFormData.price < 0) {
+        //     setError("Price cannot be negative.");
+        //     return;
+        // }
 
         setError(null);
         setIsLoading(true);
@@ -322,6 +350,7 @@ const CourseListPage: React.FC = () => {
                         required
                         className="mb-3"
                     />
+                    {formErrors.name && <p className="text-red-500 text-xs mt-1">{formErrors.name}</p>}
                     <InputField
                         label="Description"
                         name="description"
@@ -339,6 +368,7 @@ const CourseListPage: React.FC = () => {
                         required
                         className="mb-3"
                     />
+                    {formErrors.price && <p className="text-red-500 text-xs mt-1">{formErrors.price}</p>}
                     <SelectDropdown
                         label="Professor"
                         name="professorId"
@@ -354,6 +384,7 @@ const CourseListPage: React.FC = () => {
                         ]}
                         className="mb-4"
                     />
+                    {formErrors.professorId && <p className="text-red-500 text-xs mt-1">{formErrors.professorId}</p>}
                     <div className="flex justify-end space-x-3 mt-5">
                         <Button type="button" variant="secondary" onClick={handleCloseModal}>
                             Cancel

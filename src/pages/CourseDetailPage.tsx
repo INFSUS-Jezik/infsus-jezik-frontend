@@ -5,20 +5,26 @@ import { createSchedule, updateSchedule, deleteSchedule } from "../api/scheduleA
 import { createEnrollment, updateEnrollment, deleteEnrollment } from "../api/enrollmentApi";
 import { getClassrooms } from "../api/classroomApi";
 import { getProfessorsList } from "../api/professorApi";
-import { getStudentsList } from "../api/studentApi"; // Assuming StudentListDTO is an array
+import { getStudentsList } from "../api/studentApi";
 import type { Course, CourseUpdateDTO } from "../models/course";
 import type { Schedule, ScheduleCreateDTO, ScheduleUpdateDTO } from "../models/schedule";
 import type { Enrollment, EnrollmentCreateDTO, EnrollmentStatus, EnrollmentUpdateDTO } from "../models/enrollment";
 import type { Classroom } from "../models/classroom";
 import type { ProfessorListDTO } from "../models/professor";
-import type { Student } from "../models/student"; // Assuming Student model for list
+import type { Student } from "../models/student";
+
+import { validateCourse } from "../validation/courseValidation";
+import { validateSchedule } from "../validation/scheduleValidation";
+import { validateEnrollment } from "../validation/enrollmentValidation";
+
+// Import UI Components
 import Button from "../components/UI/Button";
+import Modal from "../components/UI/Modal";
 import InputField from "../components/UI/InputField";
 import SelectDropdown from "../components/UI/SelectDropdown";
-import Modal from "../components/UI/Modal";
-import ConfirmationDialog from "../components/UI/ConfirmationDialog";
 import LoadingSpinner from "../components/UI/LoadingSpinner";
 import ErrorMessage from "../components/UI/ErrorMessage";
+import ConfirmationDialog from "../components/UI/ConfirmationDialog";
 
 // Interface for the enrollment modal's form data
 interface EnrollmentModalFormData {
@@ -30,8 +36,43 @@ interface EnrollmentModalFormData {
     finalGrade?: number;
 }
 
+// Interface for data passed to validateEnrollment
+export interface EnrollmentValidationInput {
+    studentId?: number;
+    status: EnrollmentStatus;
+    grade1?: number;
+    grade2?: number;
+    grade3?: number;
+    finalGrade?: number;
+}
+
+// Define error types for each form
+interface MasterFormErrors {
+    name?: string;
+    description?: string;
+    price?: string;
+    professorId?: string;
+}
+
+interface ScheduleFormErrors {
+    classroomId?: string;
+    dayOfWeek?: string;
+    startTime?: string;
+    endTime?: string;
+    timeOrder?: string;
+}
+
+interface EnrollmentFormErrors {
+    studentId?: string;
+    status?: string;
+    grade1?: string;
+    grade2?: string;
+    grade3?: string;
+    finalGrade?: string;
+}
+
 const CourseDetailPage: React.FC = () => {
-    const { courseId } = useParams<{ courseId: string }>();
+    const { courseId: courseIdParam } = useParams<{ courseId: string }>(); // Renamed to avoid conflict
     const navigate = useNavigate();
 
     const [course, setCourse] = useState<Course | null>(null);
@@ -42,6 +83,7 @@ const CourseDetailPage: React.FC = () => {
     const [isEditingMaster, setIsEditingMaster] = useState<boolean>(false);
     const [masterFormData, setMasterFormData] = useState<CourseUpdateDTO | null>(null);
     const [professors, setProfessors] = useState<ProfessorListDTO[]>([]);
+    const [masterFormErrors, setMasterFormErrors] = useState<MasterFormErrors>({});
 
     // Schedule Modal State
     const [isScheduleModalOpen, setIsScheduleModalOpen] = useState<boolean>(false);
@@ -54,34 +96,41 @@ const CourseDetailPage: React.FC = () => {
     });
     const [editingScheduleId, setEditingScheduleId] = useState<number | null>(null);
     const [classrooms, setClassrooms] = useState<Classroom[]>([]);
+    const [scheduleFormErrors, setScheduleFormErrors] = useState<ScheduleFormErrors>({});
 
     // Enrollment Modal State
     const [isEnrollmentModalOpen, setIsEnrollmentModalOpen] = useState<boolean>(false);
     const [enrollmentModalMode, setEnrollmentModalMode] = useState<"add" | "edit">("add");
     const [currentEnrollmentFormData, setCurrentEnrollmentFormData] = useState<EnrollmentModalFormData>({
-        studentId: 0, // Will be set properly when modal opens
+        studentId: 0,
         status: "active",
-        // grade fields will be initially undefined
     });
     const [editingEnrollmentId, setEditingEnrollmentId] = useState<number | null>(null);
-    const [students, setStudents] = useState<Student[]>([]); // Assuming StudentListDTO is Student[]
+    const [students, setStudents] = useState<Student[]>([]);
+    const [enrollmentFormErrors, setEnrollmentFormErrors] = useState<EnrollmentFormErrors>({});
 
     // Delete Confirmation Dialog State
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState<boolean>(false);
     const [deleteTarget, setDeleteTarget] = useState<{ type: "schedule" | "enrollment"; id: number } | null>(null);
 
     useEffect(() => {
-        const fetchCourseData = async () => {
-            if (!courseId) return;
+        const fetchAllData = async () => {
+            if (!courseIdParam) {
+                setError("Course ID is missing.");
+                setIsLoading(false);
+                return;
+            }
+            const numericCourseId = parseInt(courseIdParam, 10);
+            if (isNaN(numericCourseId)) {
+                setError("Invalid Course ID format.");
+                setIsLoading(false);
+                return;
+            }
+
             setIsLoading(true);
+            setError(null);
             try {
-                const numericCourseId = parseInt(courseId, 10);
-                const [courseData, professorsData, classroomsData, studentsData] = await Promise.all([
-                    getCourseById(numericCourseId),
-                    getProfessorsList(),
-                    getClassrooms(),
-                    getStudentsList(), // Make sure this returns Student[]
-                ]);
+                const courseData = await getCourseById(numericCourseId);
                 setCourse(courseData);
                 setMasterFormData({
                     name: courseData.name,
@@ -89,26 +138,30 @@ const CourseDetailPage: React.FC = () => {
                     price: courseData.price,
                     professorId: courseData.professorId,
                 });
-                setProfessors(professorsData);
-                setClassrooms(classroomsData);
-                setStudents(studentsData as unknown as Student[]); // Adjust if StudentListDTO is not Student[]
-                setError(null);
+
+                const profData = await getProfessorsList();
+                setProfessors(profData);
+
+                const classData = await getClassrooms();
+                setClassrooms(classData);
+
+                const studData = await getStudentsList();
+                setStudents(studData);
             } catch (err) {
-                setError("Failed to fetch course details. " + (err instanceof Error ? err.message : String(err)));
+                setError(
+                    "Failed to fetch course details or related data. " +
+                        (err instanceof Error ? err.message : String(err))
+                );
                 console.error(err);
             } finally {
                 setIsLoading(false);
             }
         };
-        fetchCourseData();
-    }, [courseId]);
+        fetchAllData();
+    }, [courseIdParam]);
 
     const handleMasterEditToggle = () => {
-        if (isEditingMaster && course && masterFormData) {
-            // Save
-            handleUpdateCourse();
-        } else if (course) {
-            // Enter edit mode
+        if (isEditingMaster && course) {
             setMasterFormData({
                 name: course.name,
                 description: course.description || "",
@@ -116,27 +169,48 @@ const CourseDetailPage: React.FC = () => {
                 professorId: course.professorId,
             });
         }
+        setMasterFormErrors({});
         setIsEditingMaster(!isEditingMaster);
     };
 
     const handleMasterFormChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
     ) => {
-        if (!masterFormData) return;
         const { name, value } = e.target;
-        setMasterFormData(prev => ({
-            ...prev!,
-            [name]: name === "price" || name === "professorId" ? parseFloat(value) : value,
-        }));
+        setMasterFormData(prev => {
+            if (!prev) return null;
+            const updatedValue =
+                name === "price" ? parseFloat(value) || 0 : name === "professorId" ? parseInt(value, 10) || 0 : value;
+            const newFormData = { ...prev, [name]: updatedValue };
+            if (masterFormErrors[name as keyof MasterFormErrors]) {
+                setMasterFormErrors(prevErr => ({ ...prevErr, [name]: undefined }));
+            }
+            return newFormData;
+        });
     };
 
     const handleUpdateCourse = async () => {
-        if (!courseId || !masterFormData) return;
+        if (!masterFormData || !course || !courseIdParam) return;
+        const numericCourseId = parseInt(courseIdParam, 10);
+
+        const validationErrors = validateCourse(masterFormData);
+        if (Object.keys(validationErrors).length > 0) {
+            setMasterFormErrors(validationErrors);
+            return;
+        }
+        setMasterFormErrors({});
+
         setIsLoading(true);
         try {
-            const numericCourseId = parseInt(courseId, 10);
             const updatedCourse = await updateCourse(numericCourseId, masterFormData);
-            setCourse(updatedCourse);
+            setCourse(updatedCourse); // Update local course state
+            setMasterFormData({
+                // Also update masterFormData to reflect saved changes
+                name: updatedCourse.name,
+                description: updatedCourse.description || "",
+                price: updatedCourse.price,
+                professorId: updatedCourse.professorId,
+            });
             setIsEditingMaster(false);
             setError(null);
         } catch (err) {
@@ -147,7 +221,6 @@ const CourseDetailPage: React.FC = () => {
         }
     };
 
-    // Schedule Handlers
     const handleOpenScheduleModal = (mode: "add" | "edit", schedule?: Schedule) => {
         setScheduleModalMode(mode);
         if (mode === "edit" && schedule) {
@@ -159,14 +232,10 @@ const CourseDetailPage: React.FC = () => {
             });
             setEditingScheduleId(schedule.id);
         } else {
-            setCurrentScheduleFormData({
-                classroomId: classrooms[0]?.id || 0,
-                dayOfWeek: 0,
-                startTime: "09:00",
-                endTime: "11:00",
-            });
+            setCurrentScheduleFormData({ classroomId: 0, dayOfWeek: 0, startTime: "", endTime: "" });
             setEditingScheduleId(null);
         }
+        setScheduleFormErrors({});
         setIsScheduleModalOpen(true);
     };
 
@@ -176,19 +245,30 @@ const CourseDetailPage: React.FC = () => {
             ...prev,
             [name]: name === "classroomId" || name === "dayOfWeek" ? parseInt(value, 10) : value,
         }));
+        if (scheduleFormErrors[name as keyof ScheduleFormErrors]) {
+            setScheduleFormErrors(prevErr => ({ ...prevErr, [name]: undefined }));
+        }
     };
 
     const handleSaveSchedule = async () => {
-        if (!courseId) return;
+        if (!courseIdParam) return;
+        const numericCourseId = parseInt(courseIdParam, 10);
+
+        const validationErrors = validateSchedule(currentScheduleFormData);
+        if (Object.keys(validationErrors).length > 0) {
+            setScheduleFormErrors(validationErrors);
+            return;
+        }
+        setScheduleFormErrors({});
+
         setIsLoading(true);
         try {
-            const numericCourseId = parseInt(courseId, 10);
             if (scheduleModalMode === "add") {
                 await createSchedule(numericCourseId, currentScheduleFormData as ScheduleCreateDTO);
             } else if (editingScheduleId) {
                 await updateSchedule(editingScheduleId, currentScheduleFormData as ScheduleUpdateDTO);
             }
-            const updatedCourseData = await getCourseById(numericCourseId); // Refetch course to get updated schedules
+            const updatedCourseData = await getCourseById(numericCourseId);
             setCourse(updatedCourseData);
             setIsScheduleModalOpen(false);
             setError(null);
@@ -200,17 +280,11 @@ const CourseDetailPage: React.FC = () => {
         }
     };
 
-    const handleDeleteSchedule = async (scheduleId: number) => {
-        setDeleteTarget({ type: "schedule", id: scheduleId });
-        setIsDeleteDialogOpen(true);
-    };
-
-    // Enrollment Handlers
     const handleOpenEnrollmentModal = (mode: "add" | "edit", enrollment?: Enrollment) => {
         setEnrollmentModalMode(mode);
         if (mode === "edit" && enrollment) {
             setCurrentEnrollmentFormData({
-                studentId: enrollment.studentId,
+                studentId: enrollment.studentId, // studentId is part of Enrollment, not EnrollmentUpdateDTO
                 status: enrollment.status,
                 grade1: enrollment.grade1,
                 grade2: enrollment.grade2,
@@ -219,31 +293,81 @@ const CourseDetailPage: React.FC = () => {
             });
             setEditingEnrollmentId(enrollment.id);
         } else {
-            setCurrentEnrollmentFormData({ studentId: students[0]?.id || 0, status: "active" });
+            setCurrentEnrollmentFormData({ studentId: 0, status: "active" });
             setEditingEnrollmentId(null);
         }
+        setEnrollmentFormErrors({});
         setIsEnrollmentModalOpen(true);
     };
 
     const handleEnrollmentFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
-        setCurrentEnrollmentFormData(prev => ({
-            ...prev,
-            [name]: (name.startsWith("grade") || name === "studentId") && value !== "" ? parseInt(value, 10) : value,
-        }));
+        setCurrentEnrollmentFormData(prev => {
+            const updatedValue =
+                name === "studentId"
+                    ? parseInt(value, 10)
+                    : name.startsWith("grade") || name === "finalGrade"
+                    ? value === ""
+                        ? undefined
+                        : parseInt(value, 10)
+                    : value;
+            const newFormData = { ...prev, [name]: updatedValue };
+            if (enrollmentFormErrors[name as keyof EnrollmentFormErrors]) {
+                setEnrollmentFormErrors(prevErr => ({ ...prevErr, [name]: undefined }));
+            }
+            return newFormData;
+        });
     };
 
     const handleSaveEnrollment = async () => {
-        if (!courseId) return;
+        if (!courseIdParam) return;
+        const numericCourseId = parseInt(courseIdParam, 10);
+
+        let dataToValidateAndSave: EnrollmentCreateDTO | EnrollmentUpdateDTO;
+        let validationData: EnrollmentValidationInput; // Changed from any
+
+        if (enrollmentModalMode === "add") {
+            dataToValidateAndSave = {
+                studentId: currentEnrollmentFormData.studentId,
+                enrollmentDate: new Date().toISOString(),
+                status: currentEnrollmentFormData.status,
+            };
+            validationData = {
+                studentId: currentEnrollmentFormData.studentId,
+                status: currentEnrollmentFormData.status,
+            };
+        } else {
+            dataToValidateAndSave = {
+                status: currentEnrollmentFormData.status,
+                grade1: currentEnrollmentFormData.grade1,
+                grade2: currentEnrollmentFormData.grade2,
+                grade3: currentEnrollmentFormData.grade3,
+                finalGrade: currentEnrollmentFormData.finalGrade,
+            };
+            validationData = {
+                status: currentEnrollmentFormData.status,
+                grade1: currentEnrollmentFormData.grade1,
+                grade2: currentEnrollmentFormData.grade2,
+                grade3: currentEnrollmentFormData.grade3,
+                finalGrade: currentEnrollmentFormData.finalGrade,
+            };
+        }
+
+        const validationErrors = validateEnrollment(validationData);
+        if (Object.keys(validationErrors).length > 0) {
+            setEnrollmentFormErrors(validationErrors);
+            return;
+        }
+        setEnrollmentFormErrors({});
+
         setIsLoading(true);
         try {
-            const numericCourseId = parseInt(courseId, 10);
             if (enrollmentModalMode === "add") {
-                await createEnrollment(numericCourseId, currentEnrollmentFormData as EnrollmentCreateDTO);
+                await createEnrollment(numericCourseId, dataToValidateAndSave as EnrollmentCreateDTO);
             } else if (editingEnrollmentId) {
-                await updateEnrollment(editingEnrollmentId, currentEnrollmentFormData as EnrollmentUpdateDTO);
+                await updateEnrollment(editingEnrollmentId, dataToValidateAndSave as EnrollmentUpdateDTO);
             }
-            const updatedCourseData = await getCourseById(numericCourseId); // Refetch course
+            const updatedCourseData = await getCourseById(numericCourseId);
             setCourse(updatedCourseData);
             setIsEnrollmentModalOpen(false);
             setError(null);
@@ -255,34 +379,26 @@ const CourseDetailPage: React.FC = () => {
         }
     };
 
-    const handleDeleteEnrollment = async (enrollmentId: number) => {
-        setDeleteTarget({ type: "enrollment", id: enrollmentId });
+    const handleDeleteAction = (type: "schedule" | "enrollment", id: number) => {
+        setDeleteTarget({ type, id });
         setIsDeleteDialogOpen(true);
-        // console.warn(`Simulating delete for enrollment ID: ${enrollmentId}. API endpoint not yet implemented or specified for frontend.`); // Corrected
-        // // To make it seem like it worked for now:
-        // if (course) {
-        //     setCourse(prev => ({
-        //         ...prev!,
-        //         enrollments: prev!.enrollments?.filter(enr => enr.id !== enrollmentId)
-        //     }));
-        // }
     };
 
     const confirmDelete = async () => {
-        if (!deleteTarget || !courseId) return;
+        if (!deleteTarget || !courseIdParam) return;
+        const numericCourseId = parseInt(courseIdParam, 10);
         setIsLoading(true);
         try {
-            const numericCourseId = parseInt(courseId, 10);
             if (deleteTarget.type === "schedule") {
                 await deleteSchedule(deleteTarget.id);
             } else if (deleteTarget.type === "enrollment") {
                 await deleteEnrollment(deleteTarget.id);
             }
-            const updatedCourseData = await getCourseById(numericCourseId); // Refetch
+            const updatedCourseData = await getCourseById(numericCourseId);
             setCourse(updatedCourseData);
             setError(null);
         } catch (err) {
-            setError(`Failed to delete ${deleteTarget.type}. ` + (err instanceof Error ? err.message : String(err))); // Corrected
+            setError(`Failed to delete ${deleteTarget.type}. ` + (err instanceof Error ? err.message : String(err)));
             console.error(err);
         } finally {
             setIsLoading(false);
@@ -293,68 +409,209 @@ const CourseDetailPage: React.FC = () => {
 
     const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
-    if (isLoading && !course) return <LoadingSpinner />;
-    if (error) return <ErrorMessage message={error} />;
-    if (!course) return <ErrorMessage message="Course not found." />;
+    const renderMasterFormField = (
+        name: keyof MasterFormErrors,
+        label: string,
+        type: string = "text",
+        options?: { value: string | number; label: string }[]
+    ) => {
+        const value = masterFormData?.[name as keyof CourseUpdateDTO] ?? (type === "number" ? 0 : "");
+        return (
+            <div className="mb-4">
+                <label htmlFor={name} className="block text-sm font-medium text-gray-700 mb-1">
+                    {label}
+                </label>
+                {type === "select" ? (
+                    <SelectDropdown
+                        name={name}
+                        value={value as string | number}
+                        onChange={handleMasterFormChange}
+                        options={[{ value: "", label: `Select a ${label.toLowerCase()}` }, ...(options || [])]}
+                        className="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                    />
+                ) : type === "textarea" ? (
+                    <textarea
+                        id={name}
+                        name={name}
+                        value={value as string}
+                        onChange={handleMasterFormChange}
+                        rows={3}
+                        className="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2"
+                    />
+                ) : (
+                    <InputField
+                        type={type}
+                        name={name}
+                        value={value as string | number}
+                        onChange={handleMasterFormChange}
+                        className="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                        step={type === "number" ? "0.01" : undefined}
+                    />
+                )}
+                {masterFormErrors[name] && <p className="text-red-500 text-xs mt-1">{masterFormErrors[name]}</p>}
+            </div>
+        );
+    };
+
+    const renderScheduleFormField = (
+        name: keyof ScheduleFormErrors,
+        label: string,
+        type: string = "text",
+        options?: { value: string | number; label: string }[]
+    ) => {
+        const value =
+            currentScheduleFormData[name as keyof (ScheduleCreateDTO | ScheduleUpdateDTO)] ??
+            (type === "number" ? 0 : "");
+        return (
+            <div className="mb-4">
+                <label htmlFor={name} className="block text-sm font-medium text-gray-700 mb-1">
+                    {label}
+                </label>
+                {type === "select" ? (
+                    <SelectDropdown
+                        name={name}
+                        value={value as string | number}
+                        onChange={handleScheduleFormChange}
+                        options={[{ value: "", label: `Select a ${label.toLowerCase()}` }, ...(options || [])]}
+                        className="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                    />
+                ) : (
+                    <InputField
+                        type={type}
+                        name={name}
+                        value={value as string | number}
+                        onChange={handleScheduleFormChange}
+                        className="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                    />
+                )}
+                {scheduleFormErrors[name] && <p className="text-red-500 text-xs mt-1">{scheduleFormErrors[name]}</p>}
+                {name === "endTime" && scheduleFormErrors.timeOrder && (
+                    <p className="text-red-500 text-xs mt-1">{scheduleFormErrors.timeOrder}</p>
+                )}
+            </div>
+        );
+    };
+
+    const renderEnrollmentFormField = (
+        name: keyof EnrollmentFormErrors,
+        label: string,
+        type: string = "text",
+        options?: { value: string | number; label: string }[]
+    ) => {
+        const value = currentEnrollmentFormData[name as keyof EnrollmentModalFormData] ?? (type === "number" ? "" : ""); // Grades can be empty string for undefined
+        return (
+            <div className="mb-4">
+                <label htmlFor={name} className="block text-sm font-medium text-gray-700 mb-1">
+                    {label}
+                </label>
+                {type === "select" ? (
+                    <SelectDropdown
+                        name={name}
+                        value={value as string | number}
+                        onChange={handleEnrollmentFormChange}
+                        options={[{ value: "", label: `Select a ${label.toLowerCase()}` }, ...(options || [])]}
+                        className="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                    />
+                ) : (
+                    <InputField
+                        type={type}
+                        name={name}
+                        value={value as string | number}
+                        onChange={handleEnrollmentFormChange}
+                        className="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                        min={name.includes("grade") ? 1 : undefined}
+                        max={name.includes("grade") ? 5 : undefined}
+                        step={name.includes("grade") ? 1 : undefined}
+                    />
+                )}
+                {enrollmentFormErrors[name] && (
+                    <p className="text-red-500 text-xs mt-1">{enrollmentFormErrors[name]}</p>
+                )}
+            </div>
+        );
+    };
+
+    if (isLoading && !course)
+        return (
+            <div className="flex justify-center items-center h-screen">
+                <LoadingSpinner />
+            </div>
+        );
+    if (error && !isLoading)
+        return (
+            <div className="p-4">
+                <ErrorMessage message={error} />
+            </div>
+        ); // Show error only if not loading
+    if (!course && !isLoading) return <div className="p-4 text-center">Course not found or ID is invalid.</div>; // More specific message
+
+    // Ensure course is loaded before rendering dependent UI
+    if (!course)
+        return (
+            <div className="flex justify-center items-center h-screen">
+                <LoadingSpinner />
+            </div>
+        );
 
     return (
-        <div className="container mx-auto p-4">
-            <Button onClick={() => navigate("/courses")} variant="secondary" className="mb-4">
-                Back to Courses
-            </Button>
-            <h1 className="text-3xl font-bold mb-6">Course Details: {course.name}</h1>
+        <div className="container mx-auto p-6 bg-gray-50 min-h-screen">
+            <div className="mb-6 flex items-center justify-between">
+                <Button variant="secondary" onClick={() => navigate("/courses")}>
+                    &larr; Back to Courses
+                </Button>
+                <h1 className="text-3xl font-bold text-gray-800">Course Details</h1>
+                <div>{/* Spacer */}</div>
+            </div>
 
             {/* Master Section */}
-            <div className="bg-white shadow-md rounded-lg p-6 mb-8">
-                <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-2xl font-semibold">Course Information</h2>
-                    <Button onClick={handleMasterEditToggle} variant={isEditingMaster ? "primary" : "secondary"}>
-                        {isEditingMaster ? "Save Course" : "Edit Course"}
+            <div className="bg-white shadow-lg rounded-lg p-6 mb-8">
+                <div className="flex justify-between items-start mb-4">
+                    <h2 className="text-2xl font-semibold text-gray-700">Course Information</h2>
+                    <Button
+                        onClick={handleMasterEditToggle}
+                        variant={isEditingMaster ? "secondary" : "primary"}
+                        className="ml-auto"
+                    >
+                        {isEditingMaster ? "Cancel" : "Edit Course"}
                     </Button>
                 </div>
+
                 {isEditingMaster && masterFormData ? (
-                    <div className="space-y-4">
-                        <InputField
-                            label="Course Name"
-                            name="name"
-                            value={masterFormData.name}
-                            onChange={handleMasterFormChange}
-                        />
-                        <InputField
-                            label="Description"
-                            name="description"
-                            value={masterFormData.description || ""}
-                            onChange={handleMasterFormChange}
-                            type="textarea"
-                        />
-                        <InputField
-                            label="Price"
-                            name="price"
-                            type="number"
-                            value={masterFormData.price}
-                            onChange={handleMasterFormChange}
-                        />
-                        <SelectDropdown
-                            label="Professor"
-                            name="professorId"
-                            value={masterFormData.professorId}
-                            onChange={handleMasterFormChange}
-                            options={professors.map(p => ({ value: p.id, label: p.fullName }))}
-                        />
-                    </div>
+                    <form
+                        onSubmit={e => {
+                            e.preventDefault();
+                            handleUpdateCourse();
+                        }}
+                    >
+                        {renderMasterFormField("name", "Course Name")}
+                        {renderMasterFormField("description", "Description", "textarea")}
+                        {renderMasterFormField("price", "Price", "number")}
+                        {renderMasterFormField(
+                            "professorId",
+                            "Professor",
+                            "select",
+                            professors.map(p => ({ value: p.id, label: p.fullName }))
+                        )}
+                        <div className="mt-6 flex justify-end space-x-3">
+                            <Button type="submit" variant="primary">
+                                Save Changes
+                            </Button>
+                        </div>
+                    </form>
                 ) : (
-                    <div className="space-y-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 text-sm">
                         <p>
-                            <strong>Name:</strong> {course.name}
+                            <strong className="font-medium text-gray-600">Name:</strong> {course.name}
                         </p>
                         <p>
-                            <strong>Description:</strong> {course.description || "N/A"}
+                            <strong className="font-medium text-gray-600">Price:</strong> ${course.price.toFixed(2)}
+                        </p>
+                        <p className="md:col-span-2">
+                            <strong className="font-medium text-gray-600">Description:</strong>{" "}
+                            {course.description || "N/A"}
                         </p>
                         <p>
-                            <strong>Price:</strong> ${course?.price.toFixed(2)}
-                        </p>
-                        <p>
-                            <strong>Professor:</strong>{" "}
+                            <strong className="font-medium text-gray-600">Professor:</strong>{" "}
                             {professors.find(p => p.id === course.professorId)?.fullName || "N/A"}
                         </p>
                     </div>
@@ -362,36 +619,34 @@ const CourseDetailPage: React.FC = () => {
             </div>
 
             {/* Schedules Section */}
-            <div className="bg-white shadow-md rounded-lg p-6 mb-8">
+            <div className="bg-white shadow-lg rounded-lg p-6 mb-8">
                 <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-2xl font-semibold">Schedules</h2>
+                    <h2 className="text-xl font-semibold text-gray-700">Schedules</h2>
                     <Button onClick={() => handleOpenScheduleModal("add")} variant="primary">
                         Add Schedule
                     </Button>
                 </div>
                 {course.schedules && course.schedules.length > 0 ? (
-                    <ul className="space-y-3">
+                    <ul className="divide-y divide-gray-200">
                         {course.schedules.map(schedule => (
-                            <li key={schedule.id} className="p-3 border rounded-md flex justify-between items-center">
+                            <li key={schedule.id} className="py-4 flex justify-between items-center">
                                 <div>
-                                    <p>
-                                        <strong>Day:</strong> {daysOfWeek[schedule.dayOfWeek]}
+                                    <p className="font-medium text-gray-800">
+                                        {daysOfWeek[schedule.dayOfWeek]} from {schedule.startTime} to {schedule.endTime}
                                     </p>
-                                    <p>
-                                        <strong>Time:</strong> {schedule.startTime} - {schedule.endTime}
-                                    </p>
-                                    <p>
-                                        <strong>Classroom:</strong> {schedule.classroomName}
-                                    </p>
+                                    <p className="text-sm text-gray-500">Classroom: {schedule.classroomName}</p>
                                 </div>
                                 <div className="space-x-2">
                                     <Button
-                                        onClick={() => handleOpenScheduleModal("edit", schedule)}
                                         variant="secondary"
+                                        onClick={() => handleOpenScheduleModal("edit", schedule)}
                                     >
                                         Edit
                                     </Button>
-                                    <Button onClick={() => handleDeleteSchedule(schedule.id)} variant="danger">
+                                    <Button
+                                        variant="danger"
+                                        onClick={() => handleDeleteAction("schedule", schedule.id)}
+                                    >
                                         Delete
                                     </Button>
                                 </div>
@@ -399,70 +654,70 @@ const CourseDetailPage: React.FC = () => {
                         ))}
                     </ul>
                 ) : (
-                    <p>No schedules found for this course.</p>
+                    <p className="text-gray-500 italic">No schedules defined for this course.</p>
                 )}
             </div>
 
             {/* Enrollments Section */}
-            <div className="bg-white shadow-md rounded-lg p-6">
+            <div className="bg-white shadow-lg rounded-lg p-6">
                 <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-2xl font-semibold">Enrollments</h2>
+                    <h2 className="text-xl font-semibold text-gray-700">Enrollments</h2>
                     <Button onClick={() => handleOpenEnrollmentModal("add")} variant="primary">
                         Add Enrollment
                     </Button>
                 </div>
                 {course.enrollments && course.enrollments.length > 0 ? (
-                    <ul className="space-y-3">
+                    <ul className="divide-y divide-gray-200">
                         {course.enrollments.map(enrollment => (
-                            <li key={enrollment.id} className="p-3 border rounded-md">
+                            <li key={enrollment.id} className="py-4">
                                 <div className="flex justify-between items-start">
                                     <div>
-                                        <p>
-                                            <strong>Student:</strong> {enrollment.studentName}
+                                        <p className="font-medium text-gray-800">Student: {enrollment.studentName}</p>
+                                        <p className="text-sm text-gray-500">
+                                            Status:{" "}
+                                            <span
+                                                className={`capitalize px-2 py-0.5 rounded-full text-xs font-semibold ${
+                                                    enrollment.status === "active"
+                                                        ? "bg-green-100 text-green-700"
+                                                        : "bg-blue-100 text-blue-700"
+                                                }`}
+                                            >
+                                                {enrollment.status}
+                                            </span>
                                         </p>
-                                        <p>
-                                            <strong>Status:</strong> {enrollment.status}
-                                        </p>
-                                        <p>
-                                            <strong>Enrollment Date:</strong>{" "}
-                                            {new Date(enrollment.enrollmentDate).toLocaleDateString()}
+                                        <p className="text-sm text-gray-500">
+                                            Enrolled: {new Date(enrollment.enrollmentDate).toLocaleDateString()}
                                         </p>
                                     </div>
-                                    <div className="space-x-2">
+                                    <div className="space-x-2 flex-shrink-0">
                                         <Button
-                                            onClick={() => handleOpenEnrollmentModal("edit", enrollment)}
                                             variant="secondary"
+                                            onClick={() => handleOpenEnrollmentModal("edit", enrollment)}
                                         >
                                             Edit
                                         </Button>
-                                        <Button onClick={() => handleDeleteEnrollment(enrollment.id)} variant="danger">
+                                        <Button
+                                            variant="danger"
+                                            onClick={() => handleDeleteAction("enrollment", enrollment.id)}
+                                        >
                                             Delete
                                         </Button>
                                     </div>
                                 </div>
-                                {(enrollment.grade1 !== null ||
-                                    enrollment.grade2 !== null ||
-                                    enrollment.grade3 !== null ||
-                                    enrollment.finalGrade !== null) && (
-                                    <div className="mt-2 pt-2 border-t">
-                                        <p className="text-sm">
-                                            <strong>Grades:</strong>
-                                        </p>
-                                        <ul className="list-disc list-inside ml-4 text-sm">
-                                            {enrollment.grade1 !== null && <li>Grade 1: {enrollment.grade1}</li>}
-                                            {enrollment.grade2 !== null && <li>Grade 2: {enrollment.grade2}</li>}
-                                            {enrollment.grade3 !== null && <li>Grade 3: {enrollment.grade3}</li>}
-                                            {enrollment.finalGrade !== null && (
-                                                <li>Final Grade: {enrollment.finalGrade}</li>
-                                            )}
-                                        </ul>
+                                {(enrollment.grade1 !== undefined ||
+                                    enrollment.grade2 !== undefined ||
+                                    enrollment.grade3 !== undefined ||
+                                    enrollment.finalGrade !== undefined) && (
+                                    <div className="mt-2 pt-2 border-t border-gray-200 text-xs text-gray-600">
+                                        Grades: G1: {enrollment.grade1 ?? "–"}, G2: {enrollment.grade2 ?? "–"}, G3:{" "}
+                                        {enrollment.grade3 ?? "–"}, Final: {enrollment.finalGrade ?? "–"}
                                     </div>
                                 )}
                             </li>
                         ))}
                     </ul>
                 ) : (
-                    <p>No enrollments found for this course.</p>
+                    <p className="text-gray-500 italic">No students enrolled in this course.</p>
                 )}
             </div>
 
@@ -472,44 +727,35 @@ const CourseDetailPage: React.FC = () => {
                 onClose={() => setIsScheduleModalOpen(false)}
                 title={scheduleModalMode === "add" ? "Add Schedule" : "Edit Schedule"}
             >
-                <div className="space-y-4">
-                    <SelectDropdown
-                        label="Classroom"
-                        name="classroomId"
-                        value={currentScheduleFormData.classroomId}
-                        onChange={handleScheduleFormChange}
-                        options={classrooms.map(c => ({ value: c.id, label: `${c.name} (${c.abbreviation})` }))}
-                    />
-                    <SelectDropdown
-                        label="Day of Week"
-                        name="dayOfWeek"
-                        value={currentScheduleFormData.dayOfWeek}
-                        onChange={handleScheduleFormChange}
-                        options={daysOfWeek.map((day, index) => ({ value: index, label: day }))}
-                    />
-                    <InputField
-                        label="Start Time"
-                        name="startTime"
-                        type="time"
-                        value={currentScheduleFormData.startTime}
-                        onChange={handleScheduleFormChange}
-                    />
-                    <InputField
-                        label="End Time"
-                        name="endTime"
-                        type="time"
-                        value={currentScheduleFormData.endTime}
-                        onChange={handleScheduleFormChange}
-                    />
-                    <div className="flex justify-end space-x-2 pt-4">
-                        <Button onClick={() => setIsScheduleModalOpen(false)} variant="secondary">
+                <form
+                    onSubmit={e => {
+                        e.preventDefault();
+                        handleSaveSchedule();
+                    }}
+                >
+                    {renderScheduleFormField(
+                        "dayOfWeek",
+                        "Day of Week",
+                        "select",
+                        daysOfWeek.map((day, i) => ({ value: i, label: day }))
+                    )}
+                    {renderScheduleFormField("startTime", "Start Time", "time")}
+                    {renderScheduleFormField("endTime", "End Time", "time")}
+                    {renderScheduleFormField(
+                        "classroomId",
+                        "Classroom",
+                        "select",
+                        classrooms.map(c => ({ value: c.id, label: `${c.name} (${c.abbreviation})` }))
+                    )}
+                    <div className="mt-6 flex justify-end space-x-3">
+                        <Button type="button" variant="secondary" onClick={() => setIsScheduleModalOpen(false)}>
                             Cancel
                         </Button>
-                        <Button onClick={handleSaveSchedule} variant="primary">
-                            Save Schedule
+                        <Button type="submit" variant="primary">
+                            {scheduleModalMode === "add" ? "Add Schedule" : "Save Changes"}
                         </Button>
                     </div>
-                </div>
+                </form>
             </Modal>
 
             {/* Enrollment Modal */}
@@ -518,87 +764,51 @@ const CourseDetailPage: React.FC = () => {
                 onClose={() => setIsEnrollmentModalOpen(false)}
                 title={enrollmentModalMode === "add" ? "Add Enrollment" : "Edit Enrollment"}
             >
-                <div className="space-y-4">
-                    {enrollmentModalMode === "add" && (
-                        <SelectDropdown
-                            label="Student"
-                            name="studentId"
-                            value={(currentEnrollmentFormData as EnrollmentCreateDTO).studentId}
-                            onChange={handleEnrollmentFormChange}
-                            options={students.map(s => ({ value: s.id, label: `${s.firstName} ${s.lastName}` }))}
-                        />
+                <form
+                    onSubmit={e => {
+                        e.preventDefault();
+                        handleSaveEnrollment();
+                    }}
+                >
+                    {enrollmentModalMode === "add" &&
+                        renderEnrollmentFormField(
+                            "studentId",
+                            "Student",
+                            "select",
+                            students.map(s => ({ value: s.id, label: `${s.firstName} ${s.lastName}` }))
+                        )}
+                    {renderEnrollmentFormField("status", "Status", "select", [
+                        { value: "active", label: "Active" },
+                        { value: "completed", label: "Completed" },
+                    ])}
+                    {/* Grades are typically for edit mode; for create, they are usually not set or are optional */}
+                    {enrollmentModalMode === "edit" && (
+                        <>
+                            {renderEnrollmentFormField("grade1", "Grade 1 (Optional)", "number")}
+                            {renderEnrollmentFormField("grade2", "Grade 2 (Optional)", "number")}
+                            {renderEnrollmentFormField("grade3", "Grade 3 (Optional)", "number")}
+                            {renderEnrollmentFormField("finalGrade", "Final Grade (Optional)", "number")}
+                        </>
                     )}
-                    <SelectDropdown
-                        label="Status"
-                        name="status"
-                        value={currentEnrollmentFormData.status || "active"}
-                        onChange={handleEnrollmentFormChange}
-                        options={[
-                            { value: "active", label: "Active" },
-                            { value: "completed", label: "Completed" },
-                        ]}
-                    />
-                    <InputField
-                        label="Grade 1 (Optional)"
-                        name="grade1"
-                        type="number"
-                        value={currentEnrollmentFormData.grade1 ?? ""}
-                        onChange={handleEnrollmentFormChange}
-                        min="1"
-                        max="5"
-                    />
-                    <InputField
-                        label="Grade 2 (Optional)"
-                        name="grade2"
-                        type="number"
-                        value={currentEnrollmentFormData.grade2 ?? ""}
-                        onChange={handleEnrollmentFormChange}
-                        min="1"
-                        max="5"
-                    />
-                    <InputField
-                        label="Grade 3 (Optional)"
-                        name="grade3"
-                        type="number"
-                        value={currentEnrollmentFormData.grade3 ?? ""}
-                        onChange={handleEnrollmentFormChange}
-                        min="1"
-                        max="5"
-                    />
-                    <InputField
-                        label="Final Grade (Optional)"
-                        name="finalGrade"
-                        type="number"
-                        value={currentEnrollmentFormData?.finalGrade ?? ""}
-                        onChange={handleEnrollmentFormChange}
-                        min="1"
-                        max="5"
-                    />
-                    <div className="flex justify-end space-x-2 pt-4">
-                        <Button onClick={() => setIsEnrollmentModalOpen(false)} variant="secondary">
+                    <div className="mt-6 flex justify-end space-x-3">
+                        <Button type="button" variant="secondary" onClick={() => setIsEnrollmentModalOpen(false)}>
                             Cancel
                         </Button>
-                        <Button onClick={handleSaveEnrollment} variant="primary">
-                            Save Enrollment
+                        <Button type="submit" variant="primary">
+                            {enrollmentModalMode === "add" ? "Add Enrollment" : "Save Changes"}
                         </Button>
                     </div>
-                </div>
+                </form>
             </Modal>
 
-            {/* Confirmation Dialog for Deletion */}
+            {/* Confirmation Dialog for Deletes */}
             <ConfirmationDialog
                 isOpen={isDeleteDialogOpen}
                 onClose={() => setIsDeleteDialogOpen(false)}
                 onConfirm={confirmDelete}
-                title="Confirm Deletion"
-                message={`Are you sure you want to delete this ${deleteTarget?.type}? This action cannot be undone.`} // Corrected
-                confirmButtonText="Delete"
+                title={`Delete ${deleteTarget?.type === "schedule" ? "Schedule" : "Enrollment"}`}
+                message={`Are you sure you want to delete this ${deleteTarget?.type}? This action cannot be undone.`}
             />
-            {isLoading && (
-                <div className="fixed inset-0 bg-gray-500 bg-opacity-50 flex justify-center items-center z-50">
-                    <LoadingSpinner />
-                </div>
-            )}
         </div>
     );
 };

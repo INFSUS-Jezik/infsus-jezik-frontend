@@ -7,6 +7,14 @@ import Modal from "../components/UI/Modal";
 import ConfirmationDialog from "../components/UI/ConfirmationDialog";
 import LoadingSpinner from "../components/UI/LoadingSpinner";
 import ErrorMessage from "../components/UI/ErrorMessage";
+import { validateClassroom } from "../validation/classroomValidation";
+
+// Define a type for form errors to allow undefined values for fields without errors
+interface FormErrorsType {
+    name?: string;
+    abbreviation?: string;
+    // Add other potential field names here if needed for other forms in this component
+}
 
 const ClassroomListPage: React.FC = () => {
     const [classrooms, setClassrooms] = useState<Classroom[]>([]);
@@ -23,6 +31,7 @@ const ClassroomListPage: React.FC = () => {
 
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState<boolean>(false);
     const [classroomToDeleteId, setClassroomToDeleteId] = useState<number | null>(null);
+    const [formErrors, setFormErrors] = useState<FormErrorsType>({}); // Use the new FormErrorsType
 
     const fetchClassroomsData = async () => {
         setIsLoading(true);
@@ -68,19 +77,27 @@ const ClassroomListPage: React.FC = () => {
         setIsModalOpen(false);
         setCurrentFormData(initialFormState);
         setEditingClassroomId(null);
+        setFormErrors({}); // Clear errors on modal close
     };
 
     const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         setCurrentFormData(prev => ({ ...prev, [name]: value }));
+        if (formErrors[name as keyof FormErrorsType]) {
+            // Type assertion for safety
+            setFormErrors(prev => ({ ...prev, [name]: undefined }));
+        }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!currentFormData.name || !currentFormData.abbreviation) {
-            setError("Name and Abbreviation cannot be empty.");
+        const validationErrors = validateClassroom(currentFormData);
+        if (Object.keys(validationErrors).length > 0) {
+            setFormErrors(validationErrors);
             return;
         }
+        setFormErrors({}); // Clear errors before submission
+
         setError(null);
         setIsLoading(true);
         try {
@@ -220,22 +237,28 @@ const ClassroomListPage: React.FC = () => {
                 title={modalMode === "add" ? "Add New Classroom" : "Edit Classroom"}
             >
                 <form onSubmit={handleSubmit}>
-                    <InputField
-                        label="Name"
-                        name="name"
-                        value={currentFormData.name}
-                        onChange={handleFormChange}
-                        required
-                        className="mb-3"
-                    />
-                    <InputField
-                        label="Abbreviation"
-                        name="abbreviation"
-                        value={currentFormData.abbreviation}
-                        onChange={handleFormChange}
-                        required
-                        className="mb-4"
-                    />
+                    <div>
+                        <InputField
+                            label="Name"
+                            name="name"
+                            value={currentFormData.name}
+                            onChange={handleFormChange}
+                            required
+                            className="mb-3"
+                        />
+                        {formErrors.name && <p className="text-red-500 text-xs mt-1">{formErrors.name}</p>}
+                        <InputField
+                            label="Abbreviation"
+                            name="abbreviation"
+                            value={currentFormData.abbreviation}
+                            onChange={handleFormChange}
+                            required
+                            className="mb-3"
+                        />
+                        {formErrors.abbreviation && (
+                            <p className="text-red-500 text-xs mt-1">{formErrors.abbreviation}</p>
+                        )}
+                    </div>
                     <div className="flex justify-end space-x-3 mt-5">
                         <Button type="button" variant="secondary" onClick={handleCloseModal}>
                             Cancel
