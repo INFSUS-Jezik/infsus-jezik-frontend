@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getCourseById, updateCourse } from "../api/courseApi";
 import { createSchedule, updateSchedule, deleteSchedule } from "../api/scheduleApi";
-import { createEnrollment, updateEnrollment /* deleteEnrollment */ } from "../api/enrollmentApi";
+import { createEnrollment, updateEnrollment, deleteEnrollment } from "../api/enrollmentApi";
 import { getClassrooms } from "../api/classroomApi";
 import { getProfessorsList } from "../api/professorApi";
 import { getStudentsList } from "../api/studentApi"; // Assuming StudentListDTO is an array
@@ -276,15 +276,7 @@ const CourseDetailPage: React.FC = () => {
             if (deleteTarget.type === "schedule") {
                 await deleteSchedule(deleteTarget.id);
             } else if (deleteTarget.type === "enrollment") {
-                // await deleteEnrollment(deleteTarget.id); // Uncomment when API is available
-                console.warn(`Actual delete for enrollment ID ${deleteTarget.id} skipped as API is not ready.`); // Corrected
-                // Simulate successful deletion for UI update
-                if (course) {
-                    setCourse(prev => ({
-                        ...prev!,
-                        enrollments: prev!.enrollments?.filter(enr => enr.id !== deleteTarget.id),
-                    }));
-                }
+                await deleteEnrollment(deleteTarget.id);
             }
             const updatedCourseData = await getCourseById(numericCourseId); // Refetch
             setCourse(updatedCourseData);
