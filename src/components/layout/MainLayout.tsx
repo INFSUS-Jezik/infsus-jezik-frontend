@@ -7,7 +7,7 @@ interface MainLayoutProps {
 
 const MainLayout: FC<MainLayoutProps> = ({ children }) => {
     return (
-        <div className="flex min-h-screen bg-gray-50">
+        <div className="flex !min-w-fit min-h-screen bg-gray-50">
             {/* Navigation sidebar */}
             <nav className="w-64 bg-white shadow-md p-6">
                 <div className="mb-8">
