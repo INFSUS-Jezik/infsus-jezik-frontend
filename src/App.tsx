@@ -1,35 +1,50 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import "./App.css";
+import MainLayout from "./components/layout/MainLayout";
+import CourseListPage from "./pages/CourseListPage";
+import ClassroomListPage from "./pages/ClassroomListPage";
 
 function App() {
-  const [count, setCount] = useState(0)
+    return (
+        <BrowserRouter>
+            <Routes>
+                {/* Redirect root to courses */}
+                <Route path="/" element={<Navigate to="/courses" replace />} />
 
-  return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1 className='!text-xl font-bold underline'>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+                {/* Main routes with layout */}
+                <Route
+                    path="/courses"
+                    element={
+                        <MainLayout>
+                            <CourseListPage />
+                        </MainLayout>
+                    }
+                />
+
+                <Route
+                    path="/classrooms"
+                    element={
+                        <MainLayout>
+                            <ClassroomListPage />
+                        </MainLayout>
+                    }
+                />
+
+                {/* Fallback for any other routes */}
+                <Route
+                    path="*"
+                    element={
+                        <MainLayout>
+                            <div className="p-8 text-center">
+                                <h1 className="text-2xl font-bold mb-4">Page Not Found</h1>
+                                <p>The page you are looking for doesn't exist.</p>
+                            </div>
+                        </MainLayout>
+                    }
+                />
+            </Routes>
+        </BrowserRouter>
+    );
 }
 
-export default App
+export default App;
