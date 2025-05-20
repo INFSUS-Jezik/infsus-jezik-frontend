@@ -152,7 +152,7 @@ const ClassroomListPage: React.FC = () => {
                     placeholder="Search by name or abbreviation..."
                     value={searchTerm}
                     onChange={e => setSearchTerm(e.target.value)}
-                    className="w-full sm:w-1/3 mb-3 sm:mb-0"
+                    className="!w-md sm:w-1/3 mb-3 sm:mb-0"
                 />
                 <Button onClick={handleOpenAddModal} variant="primary" className="w-full sm:w-auto">
                     Add New Classroom
