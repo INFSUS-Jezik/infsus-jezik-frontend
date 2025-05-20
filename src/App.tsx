@@ -3,6 +3,7 @@ import "./App.css";
 import MainLayout from "./components/layout/MainLayout";
 import CourseListPage from "./pages/CourseListPage";
 import ClassroomListPage from "./pages/ClassroomListPage";
+import CourseDetailPage from "./pages/CourseDetailPage";
 
 function App() {
     return (
@@ -26,6 +27,15 @@ function App() {
                     element={
                         <MainLayout>
                             <ClassroomListPage />
+                        </MainLayout>
+                    }
+                />
+
+                <Route
+                    path="/courses/:courseId"
+                    element={
+                        <MainLayout>
+                            <CourseDetailPage />
                         </MainLayout>
                     }
                 />
