@@ -91,7 +91,7 @@ const ClassroomListPage: React.FC = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        const validationErrors = validateClassroom(currentFormData);
+        const validationErrors = validateClassroom(currentFormData, classrooms, editingClassroomId);
         if (Object.keys(validationErrors).length > 0) {
             setFormErrors(validationErrors);
             return;
