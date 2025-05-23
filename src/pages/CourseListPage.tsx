@@ -11,7 +11,8 @@ import Modal from "../components/UI/Modal";
 import ConfirmationDialog from "../components/UI/ConfirmationDialog";
 import LoadingSpinner from "../components/UI/LoadingSpinner";
 import ErrorMessage from "../components/UI/ErrorMessage";
-import { validateCourse } from "../validation/courseValidation"; // Added import
+import { validateCourse } from "../validation/courseValidation";
+import { getErrorMessage } from "../utils/errorUtils";
 
 // Define a type for form errors
 interface CourseFormErrors {
@@ -52,8 +53,9 @@ const CourseListPage: React.FC = () => {
         try {
             const data = await getCourses();
             setCourses(data);
-        } catch (err) {
-            setError("Failed to fetch courses. Please try again later.");
+        } catch (err: unknown) {
+            const backendMessage = getErrorMessage(err, "Unknown error");
+            setError(`Failed to fetch courses. Please try again later. ${backendMessage}`);
             console.error(err);
         } finally {
             setIsLoading(false);
@@ -64,8 +66,9 @@ const CourseListPage: React.FC = () => {
         try {
             const data = await getProfessorsList();
             setProfessors(data);
-        } catch (err) {
-            setError("Failed to fetch professors list. Please try again later.");
+        } catch (err: unknown) {
+            const backendMessage = getErrorMessage(err, "Unknown error");
+            setError(`Failed to fetch professors list. Please try again later. ${backendMessage}`);
             console.error(err);
         }
     };
@@ -169,8 +172,9 @@ const CourseListPage: React.FC = () => {
             }
             await fetchCoursesData(); // Refresh list
             handleCloseModal();
-        } catch (err) {
-            setError(`Failed to ${modalMode === "add" ? "create" : "update"} course.`);
+        } catch (err: unknown) {
+            const backendMessage = getErrorMessage(err, "Unknown error");
+            setError(`Failed to ${modalMode === "add" ? "create" : "update"} course. ${backendMessage}`);
             console.error(err);
         } finally {
             setIsLoading(false);
@@ -195,8 +199,9 @@ const CourseListPage: React.FC = () => {
             await deleteCourse(courseToDeleteId);
             await fetchCoursesData(); // Refresh list
             handleCloseDeleteDialog();
-        } catch (err) {
-            setError("Failed to delete course.");
+        } catch (err: unknown) {
+            const backendMessage = getErrorMessage(err, "Unknown error");
+            setError(`Failed to delete course. ${backendMessage}`);
             console.error(err);
         } finally {
             setIsLoading(false);

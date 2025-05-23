@@ -16,6 +16,7 @@ import type { Student } from "../models/student";
 import { validateCourse } from "../validation/courseValidation";
 import { validateSchedule } from "../validation/scheduleValidation";
 import { validateEnrollment } from "../validation/enrollmentValidation";
+import { getErrorMessage } from "../utils/errorUtils";
 
 // Import UI Components
 import Button from "../components/UI/Button";
@@ -147,11 +148,9 @@ const CourseDetailPage: React.FC = () => {
 
                 const studData = await getStudentsList();
                 setStudents(studData);
-            } catch (err) {
-                setError(
-                    "Failed to fetch course details or related data. " +
-                        (err instanceof Error ? err.message : String(err))
-                );
+            } catch (err: unknown) {
+                const backendMessage = getErrorMessage(err, "Unknown error");
+                setError(`Failed to fetch course details or related data. ${backendMessage}`);
                 console.error(err);
             } finally {
                 setIsLoading(false);
@@ -213,8 +212,9 @@ const CourseDetailPage: React.FC = () => {
             });
             setIsEditingMaster(false);
             setError(null);
-        } catch (err) {
-            setError("Failed to update course. " + (err instanceof Error ? err.message : String(err)));
+        } catch (err: unknown) {
+            const backendMessage = getErrorMessage(err, "Unknown error");
+            setError(`Failed to update course. ${backendMessage}`);
             console.error(err);
         } finally {
             setIsLoading(false);
@@ -272,8 +272,9 @@ const CourseDetailPage: React.FC = () => {
             setCourse(updatedCourseData);
             setIsScheduleModalOpen(false);
             setError(null);
-        } catch (err) {
-            setError("Failed to save schedule. " + (err instanceof Error ? err.message : String(err)));
+        } catch (err: unknown) {
+            const backendMessage = getErrorMessage(err, "Unknown error");
+            setError(`Failed to save schedule. ${backendMessage}`);
             console.error(err);
         } finally {
             setIsLoading(false);
@@ -371,8 +372,9 @@ const CourseDetailPage: React.FC = () => {
             setCourse(updatedCourseData);
             setIsEnrollmentModalOpen(false);
             setError(null);
-        } catch (err) {
-            setError("Failed to save enrollment. " + (err instanceof Error ? err.message : String(err)));
+        } catch (err: unknown) {
+            const backendMessage = getErrorMessage(err, "Unknown error");
+            setError(`Failed to save enrollment. ${backendMessage}`);
             console.error(err);
         } finally {
             setIsLoading(false);
@@ -397,8 +399,9 @@ const CourseDetailPage: React.FC = () => {
             const updatedCourseData = await getCourseById(numericCourseId);
             setCourse(updatedCourseData);
             setError(null);
-        } catch (err) {
-            setError(`Failed to delete ${deleteTarget.type}. ` + (err instanceof Error ? err.message : String(err)));
+        } catch (err: unknown) {
+            const backendMessage = getErrorMessage(err, "Unknown error");
+            setError(`Failed to delete ${deleteTarget.type}. ${backendMessage}`);
             console.error(err);
         } finally {
             setIsLoading(false);

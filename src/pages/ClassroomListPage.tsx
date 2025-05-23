@@ -8,6 +8,7 @@ import ConfirmationDialog from "../components/UI/ConfirmationDialog";
 import LoadingSpinner from "../components/UI/LoadingSpinner";
 import ErrorMessage from "../components/UI/ErrorMessage";
 import { validateClassroom } from "../validation/classroomValidation";
+import { getErrorMessage } from "../utils/errorUtils";
 
 // Define a type for form errors to allow undefined values for fields without errors
 interface FormErrorsType {
@@ -39,8 +40,9 @@ const ClassroomListPage: React.FC = () => {
         try {
             const data = await getClassrooms();
             setClassrooms(data);
-        } catch (err) {
-            setError("Failed to fetch classrooms. Please try again later.");
+        } catch (err: unknown) {
+            const backendMessage = getErrorMessage(err, "Unknown error");
+            setError(`Failed to fetch classrooms. Please try again later. ${backendMessage}`);
             console.error(err);
         } finally {
             setIsLoading(false);
@@ -108,8 +110,9 @@ const ClassroomListPage: React.FC = () => {
             }
             await fetchClassroomsData(); // Refresh list
             handleCloseModal();
-        } catch (err) {
-            setError(`Failed to ${modalMode === "add" ? "create" : "update"} classroom.`);
+        } catch (err: unknown) {
+            const backendMessage = getErrorMessage(err, "Unknown error");
+            setError(`Failed to ${modalMode === "add" ? "create" : "update"} classroom. ${backendMessage}`);
             console.error(err);
         } finally {
             setIsLoading(false);
@@ -134,8 +137,9 @@ const ClassroomListPage: React.FC = () => {
             await deleteClassroom(classroomToDeleteId);
             await fetchClassroomsData(); // Refresh list
             handleCloseDeleteDialog();
-        } catch (err) {
-            setError("Failed to delete classroom.");
+        } catch (err: unknown) {
+            const backendMessage = getErrorMessage(err, "Unknown error");
+            setError(`Failed to delete classroom. ${backendMessage}`);
             console.error(err);
         } finally {
             setIsLoading(false);
