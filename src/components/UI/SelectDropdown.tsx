@@ -14,7 +14,7 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({ options, label, classNa
                 </label>
             )}
             <select
-                className={`mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md shadow-sm ${className}`}
+                className={`mt-1 block w-full pl-3 pr-10 py-2 text-base border border-gray-300 text-gray-700 bg-white focus:outline-none focus:ring-orange-500 focus:border-orange-500 rounded-md shadow-sm ${className}`}
                 {...props}
             >
                 {options.map(option => (

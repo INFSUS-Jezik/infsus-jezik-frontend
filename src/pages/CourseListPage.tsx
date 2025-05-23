@@ -224,41 +224,40 @@ const CourseListPage: React.FC = () => {
     };
 
     return (
-        <div className="container mx-auto p-4 bg-gray-50 min-h-screen">
-            <h1 className="text-2xl font-bold mb-6 text-gray-700">Courses Management</h1>
-
-            <div className="mb-4 flex flex-col sm:flex-row justify-between items-center">
-                <InputField
-                    type="text"
-                    placeholder="Search by name, description, or professor..."
-                    value={searchTerm}
-                    onChange={e => setSearchTerm(e.target.value)}
-                    className="!w-md sm:w-1/3 mb-3 sm:mb-0"
-                />
-                <Button onClick={handleOpenAddModal} variant="primary" className="w-full sm:w-auto">
+        <div className="space-y-6">
+            <div className="flex items-center justify-between">
+                <h1 className="text-2xl font-semibold text-gray-800">Courses</h1>
+                <Button onClick={handleOpenAddModal} variant="primary">
                     Add New Course
                 </Button>
             </div>
 
-            {isLoading && (
-                <div className="flex justify-center my-4">
-                    <LoadingSpinner />
+            <div className="flex items-center space-x-4">
+                <div className="flex-1 max-w-md">
+                    <InputField
+                        type="text"
+                        placeholder="Search by name, description, or professor..."
+                        value={searchTerm}
+                        onChange={e => setSearchTerm(e.target.value)}
+                        className="mb-0"
+                    />
                 </div>
-            )}
-            {error && !isLoading && (
-                <div className="my-4">
-                    <ErrorMessage message={error} />
-                </div>
-            )}
+            </div>
+
+            {isLoading && <LoadingSpinner />}
+
+            {error && !isLoading && <ErrorMessage message={error} />}
 
             {!isLoading && !error && filteredCourses.length === 0 && (
-                <p className="text-center text-gray-500 py-4">No courses found.</p>
+                <div className="text-center py-12">
+                    <p className="text-gray-500">No courses found.</p>
+                </div>
             )}
 
             {!isLoading && !error && filteredCourses.length > 0 && (
-                <div className="shadow overflow-x-auto border-b border-gray-200 sm:rounded-lg">
+                <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
                     <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-100">
+                        <thead className="bg-gray-50">
                             <tr>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Name
@@ -285,49 +284,51 @@ const CourseListPage: React.FC = () => {
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
                             {filteredCourses.map(course => (
-                                <tr key={course.id}>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                <tr key={course.id} className="hover:bg-gray-50 transition-colors">
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-700">
                                         {course.name}
                                     </td>
-                                    <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
+                                    <td className="px-6 py-4 text-sm text-gray-600 max-w-48 truncate">
                                         {course.description || "—"}
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                                         ${course.price.toFixed(2)}
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                                         {course.professor
                                             ? `${course.professor?.firstName} ${course.professor?.lastName}`
                                             : "—"}
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                                         {formatScheduleSummary(course)}
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                                         {formatEnrollmentSummary(course)}
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                                        <Button
-                                            variant="primary"
-                                            onClick={() => handleViewDetails(course.id)}
-                                            className="text-xs px-2 py-1"
-                                        >
-                                            Details
-                                        </Button>
-                                        <Button
-                                            variant="secondary"
-                                            onClick={() => handleOpenEditModal(course)}
-                                            className="text-xs px-2 py-1"
-                                        >
-                                            Edit
-                                        </Button>
-                                        <Button
-                                            variant="danger"
-                                            onClick={() => handleOpenDeleteDialog(course.id)}
-                                            className="text-xs px-2 py-1"
-                                        >
-                                            Delete
-                                        </Button>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                        <div className="flex space-x-2 min-w-max">
+                                            <Button
+                                                variant="primary"
+                                                onClick={() => handleViewDetails(course.id)}
+                                                className="text-xs px-3 py-1.5"
+                                            >
+                                                Details
+                                            </Button>
+                                            <Button
+                                                variant="secondary"
+                                                onClick={() => handleOpenEditModal(course)}
+                                                className="text-xs px-3 py-1.5"
+                                            >
+                                                Edit
+                                            </Button>
+                                            <Button
+                                                variant="danger"
+                                                onClick={() => handleOpenDeleteDialog(course.id)}
+                                                className="text-xs px-3 py-1.5"
+                                            >
+                                                Delete
+                                            </Button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
@@ -341,51 +342,55 @@ const CourseListPage: React.FC = () => {
                 onClose={handleCloseModal}
                 title={modalMode === "add" ? "Add New Course" : "Edit Course"}
             >
-                <form onSubmit={handleSubmit}>
-                    <InputField
-                        label="Name"
-                        name="name"
-                        value={currentFormData.name}
-                        onChange={handleInputChange}
-                        required
-                        className="mb-3"
-                    />
-                    {formErrors.name && <p className="text-red-500 text-xs mt-1">{formErrors.name}</p>}
-                    <InputField
-                        label="Description"
-                        name="description"
-                        value={currentFormData.description || ""}
-                        onChange={handleInputChange}
-                        className="mb-3"
-                    />
-                    <InputField
-                        label="Price"
-                        name="price"
-                        type="number"
-                        step="0.01"
-                        value={currentFormData.price.toString()}
-                        onChange={handleInputChange}
-                        required
-                        className="mb-3"
-                    />
-                    {formErrors.price && <p className="text-red-500 text-xs mt-1">{formErrors.price}</p>}
-                    <SelectDropdown
-                        label="Professor"
-                        name="professorId"
-                        value={currentFormData.professorId || ""}
-                        onChange={handleSelectChange}
-                        required
-                        options={[
-                            { value: "", label: "Select a professor" },
-                            ...professors.map(professor => ({
-                                value: professor.id,
-                                label: professor.fullName,
-                            })),
-                        ]}
-                        className="mb-4"
-                    />
-                    {formErrors.professorId && <p className="text-red-500 text-xs mt-1">{formErrors.professorId}</p>}
-                    <div className="flex justify-end space-x-3 mt-5">
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div>
+                        <InputField
+                            label="Name"
+                            name="name"
+                            value={currentFormData.name}
+                            onChange={handleInputChange}
+                            required
+                        />
+                        {formErrors.name && <p className="text-red-500 text-sm">{formErrors.name}</p>}
+                    </div>
+                    <div>
+                        <InputField
+                            label="Description"
+                            name="description"
+                            value={currentFormData.description || ""}
+                            onChange={handleInputChange}
+                        />
+                    </div>
+                    <div>
+                        <InputField
+                            label="Price"
+                            name="price"
+                            type="number"
+                            step="0.01"
+                            value={currentFormData.price.toString()}
+                            onChange={handleInputChange}
+                            required
+                        />
+                        {formErrors.price && <p className="text-red-500 text-sm">{formErrors.price}</p>}
+                    </div>
+                    <div>
+                        <SelectDropdown
+                            label="Professor"
+                            name="professorId"
+                            value={currentFormData.professorId || ""}
+                            onChange={handleSelectChange}
+                            required
+                            options={[
+                                { value: "", label: "Select a professor" },
+                                ...professors.map(professor => ({
+                                    value: professor.id,
+                                    label: professor.fullName,
+                                })),
+                            ]}
+                        />
+                        {formErrors.professorId && <p className="text-red-500 text-sm">{formErrors.professorId}</p>}
+                    </div>
+                    <div className="flex justify-end space-x-3 mt-6">
                         <Button type="button" variant="secondary" onClick={handleCloseModal}>
                             Cancel
                         </Button>

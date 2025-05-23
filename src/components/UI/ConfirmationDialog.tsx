@@ -26,8 +26,8 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
     return (
         <Modal isOpen={isOpen} onClose={onClose} title={title}>
             <div className="text-center">
-                <p className="text-sm text-gray-500 mb-4">{message}</p>
-                <div className="flex justify-center space-x-4">
+                <p className="text-gray-600 mb-6">{message}</p>
+                <div className="flex justify-center space-x-3">
                     <Button variant="secondary" onClick={onClose}>
                         {cancelButtonText}
                     </Button>

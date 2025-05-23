@@ -7,35 +7,34 @@ interface MainLayoutProps {
 
 const MainLayout: FC<MainLayoutProps> = ({ children }) => {
     return (
-        <div className="flex !min-w-fit min-h-screen bg-gray-50">
-            {/* Navigation sidebar */}
-            <nav className="w-64 bg-white shadow-md p-6">
-                <div className="mb-8">
-                    <h2 className="font-bold text-xl text-blue-600">INFSUS - Jezik</h2>
+        <div className="min-h-screen bg-white">
+            {/* Top Navigation */}
+            <nav className="bg-white shadow-sm border-b border-gray-200">
+                <div className="max-w-7xl mx-auto px-6 py-4">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-8">
+                            <h1 className="text-xl font-semibold text-gray-800">INFSUS - Jezik</h1>
+                            <div className="flex space-x-6">
+                                <Link
+                                    to="/courses"
+                                    className="text-gray-600 hover:text-orange-500 px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer"
+                                >
+                                    Courses
+                                </Link>
+                                <Link
+                                    to="/classrooms"
+                                    className="text-gray-600 hover:text-orange-500 px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer"
+                                >
+                                    Classrooms
+                                </Link>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-
-                <ul className="space-y-4">
-                    <li>
-                        <Link
-                            to="/courses"
-                            className="flex items-center p-2 rounded-md text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-all"
-                        >
-                            Courses
-                        </Link>
-                    </li>
-                    <li>
-                        <Link
-                            to="/classrooms"
-                            className="flex items-center p-2 rounded-md text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-all"
-                        >
-                            Classrooms
-                        </Link>
-                    </li>
-                </ul>
             </nav>
 
             {/* Main content area */}
-            <main className="flex-1 p-8">{children}</main>
+            <main className="max-w-7xl mx-auto px-6 py-8">{children}</main>
         </div>
     );
 };

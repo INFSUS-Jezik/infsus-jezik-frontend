@@ -143,86 +143,78 @@ const ClassroomListPage: React.FC = () => {
     };
 
     return (
-        <div className="container mx-auto p-4 bg-gray-50 min-h-screen">
-            <h1 className="text-2xl font-bold mb-6 text-gray-700">Classrooms Management</h1>
-
-            <div className="mb-4 flex flex-col sm:flex-row justify-between items-center">
-                <InputField
-                    type="text"
-                    placeholder="Search by name or abbreviation..."
-                    value={searchTerm}
-                    onChange={e => setSearchTerm(e.target.value)}
-                    className="!w-md sm:w-1/3 mb-3 sm:mb-0"
-                />
-                <Button onClick={handleOpenAddModal} variant="primary" className="w-full sm:w-auto">
+        <div className="space-y-6">
+            <div className="flex items-center justify-between">
+                <h1 className="text-2xl font-semibold text-gray-800">Classrooms</h1>
+                <Button onClick={handleOpenAddModal} variant="primary">
                     Add New Classroom
                 </Button>
             </div>
 
-            {isLoading && (
-                <div className="flex justify-center my-4">
-                    <LoadingSpinner />
+            <div className="flex items-center space-x-4">
+                <div className="flex-1 max-w-md">
+                    <InputField
+                        type="text"
+                        placeholder="Search by name or abbreviation..."
+                        value={searchTerm}
+                        onChange={e => setSearchTerm(e.target.value)}
+                        className="mb-0"
+                    />
                 </div>
-            )}
-            {error && !isLoading && (
-                <div className="my-4">
-                    <ErrorMessage message={error} />
-                </div>
-            )}
+            </div>
+
+            {isLoading && <LoadingSpinner />}
+
+            {error && !isLoading && <ErrorMessage message={error} />}
 
             {!isLoading && !error && filteredClassrooms.length === 0 && (
-                <p className="text-center text-gray-500 py-4">No classrooms found.</p>
+                <div className="text-center py-12">
+                    <p className="text-gray-500">No classrooms found.</p>
+                </div>
             )}
 
             {!isLoading && !error && filteredClassrooms.length > 0 && (
-                <div className="shadow overflow-x-auto border-b border-gray-200 sm:rounded-lg">
+                <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
                     <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-100">
+                        <thead className="bg-gray-50">
                             <tr>
-                                <th
-                                    scope="col"
-                                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                >
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Name
                                 </th>
-                                <th
-                                    scope="col"
-                                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                >
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Abbreviation
                                 </th>
-                                <th
-                                    scope="col"
-                                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                >
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Actions
                                 </th>
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
                             {filteredClassrooms.map(classroom => (
-                                <tr key={classroom.id}>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                <tr key={classroom.id} className="hover:bg-gray-50 transition-colors">
+                                    <td className="px-6 py-4 whitespace-nowrap text-left text-sm font-medium text-gray-700">
                                         {classroom.name}
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <td className="px-6 py-4 whitespace-nowrap text-left text-sm text-gray-600">
                                         {classroom.abbreviation}
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                                        <Button
-                                            variant="secondary"
-                                            onClick={() => handleOpenEditModal(classroom)}
-                                            className="text-xs px-2 py-1"
-                                        >
-                                            Edit
-                                        </Button>
-                                        <Button
-                                            variant="danger"
-                                            onClick={() => handleOpenDeleteDialog(classroom.id)}
-                                            className="text-xs px-2 py-1"
-                                        >
-                                            Delete
-                                        </Button>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                        <div className="flex space-x-2 min-w-max">
+                                            <Button
+                                                variant="secondary"
+                                                onClick={() => handleOpenEditModal(classroom)}
+                                                className="text-xs px-3 py-1.5"
+                                            >
+                                                Edit
+                                            </Button>
+                                            <Button
+                                                variant="danger"
+                                                onClick={() => handleOpenDeleteDialog(classroom.id)}
+                                                className="text-xs px-3 py-1.5"
+                                            >
+                                                Delete
+                                            </Button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
@@ -236,7 +228,7 @@ const ClassroomListPage: React.FC = () => {
                 onClose={handleCloseModal}
                 title={modalMode === "add" ? "Add New Classroom" : "Edit Classroom"}
             >
-                <form onSubmit={handleSubmit}>
+                <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
                         <InputField
                             label="Name"
@@ -244,22 +236,20 @@ const ClassroomListPage: React.FC = () => {
                             value={currentFormData.name}
                             onChange={handleFormChange}
                             required
-                            className="mb-3"
                         />
-                        {formErrors.name && <p className="text-red-500 text-xs mt-1">{formErrors.name}</p>}
+                        {formErrors.name && <p className="text-red-500 text-sm">{formErrors.name}</p>}
+                    </div>
+                    <div>
                         <InputField
                             label="Abbreviation"
                             name="abbreviation"
                             value={currentFormData.abbreviation}
                             onChange={handleFormChange}
                             required
-                            className="mb-3"
                         />
-                        {formErrors.abbreviation && (
-                            <p className="text-red-500 text-xs mt-1">{formErrors.abbreviation}</p>
-                        )}
+                        {formErrors.abbreviation && <p className="text-red-500 text-sm">{formErrors.abbreviation}</p>}
                     </div>
-                    <div className="flex justify-end space-x-3 mt-5">
+                    <div className="flex justify-end space-x-3 mt-6">
                         <Button type="button" variant="secondary" onClick={handleCloseModal}>
                             Cancel
                         </Button>

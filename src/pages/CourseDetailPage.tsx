@@ -436,7 +436,7 @@ const CourseDetailPage: React.FC = () => {
                         value={value as string}
                         onChange={handleMasterFormChange}
                         rows={3}
-                        className="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2"
+                        className="mt-1 block w-full shadow-sm sm:text-sm text-gray-700 border-gray-300 rounded-md p-2"
                     />
                 ) : (
                     <InputField
@@ -444,7 +444,7 @@ const CourseDetailPage: React.FC = () => {
                         name={name}
                         value={value as string | number}
                         onChange={handleMasterFormChange}
-                        className="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                        className="mt-1 block w-full shadow-sm sm:text-sm text-gray-700 border-gray-300 rounded-md"
                         step={type === "number" ? "0.01" : undefined}
                     />
                 )}
@@ -481,7 +481,7 @@ const CourseDetailPage: React.FC = () => {
                         name={name}
                         value={value as string | number}
                         onChange={handleScheduleFormChange}
-                        className="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                        className="mt-1 block w-full shadow-sm sm:text-sm !text-gray-800 border-gray-300 rounded-md"
                     />
                 )}
                 {scheduleFormErrors[name] && <p className="text-red-500 text-xs mt-1">{scheduleFormErrors[name]}</p>}
@@ -554,24 +554,20 @@ const CourseDetailPage: React.FC = () => {
         );
 
     return (
-        <div className="container mx-auto p-6 bg-gray-50 min-h-screen">
-            <div className="mb-6 flex items-center justify-between">
+        <div className="space-y-8">
+            <div className="flex items-center justify-between">
                 <Button variant="secondary" onClick={() => navigate("/courses")}>
-                    &larr; Back to Courses
+                    ← Back to Courses
                 </Button>
-                <h1 className="text-3xl font-bold text-gray-800">Course Details</h1>
+                <h1 className="text-2xl font-semibold text-gray-800">Course Details</h1>
                 <div>{/* Spacer */}</div>
             </div>
 
             {/* Master Section */}
-            <div className="bg-white shadow-lg rounded-lg p-6 mb-8">
-                <div className="flex justify-between items-start mb-4">
-                    <h2 className="text-2xl font-semibold text-gray-700">Course Information</h2>
-                    <Button
-                        onClick={handleMasterEditToggle}
-                        variant={isEditingMaster ? "secondary" : "primary"}
-                        className="ml-auto"
-                    >
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <div className="flex justify-between items-start mb-6">
+                    <h2 className="text-xl font-semibold text-gray-800">Course Information</h2>
+                    <Button onClick={handleMasterEditToggle} variant={isEditingMaster ? "secondary" : "primary"}>
                         {isEditingMaster ? "Cancel" : "Edit Course"}
                     </Button>
                 </div>
@@ -582,6 +578,7 @@ const CourseDetailPage: React.FC = () => {
                             e.preventDefault();
                             handleUpdateCourse();
                         }}
+                        className="space-y-4"
                     >
                         {renderMasterFormField("name", "Course Name")}
                         {renderMasterFormField("description", "Description", "textarea")}
@@ -599,19 +596,19 @@ const CourseDetailPage: React.FC = () => {
                         </div>
                     </form>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 text-sm">
-                        <p>
-                            <strong className="font-medium text-gray-600">Name:</strong> {course.name}
+                    <div className="space-y-3 text-sm">
+                        <p className="text-gray-600">
+                            <strong className="font-medium !text-gray-800">Name:</strong> {course.name}
                         </p>
-                        <p>
-                            <strong className="font-medium text-gray-600">Price:</strong> ${course.price.toFixed(2)}
+                        <p className="text-gray-600">
+                            <strong className="font-medium !text-gray-800">Price:</strong> ${course.price.toFixed(2)}
                         </p>
-                        <p className="md:col-span-2">
-                            <strong className="font-medium text-gray-600">Description:</strong>{" "}
+                        <p className="text-gray-600">
+                            <strong className="font-medium !text-gray-800">Description:</strong>{" "}
                             {course.description || "N/A"}
                         </p>
-                        <p>
-                            <strong className="font-medium text-gray-600">Professor:</strong>{" "}
+                        <p className="text-gray-600">
+                            <strong className="font-medium !text-gray-800">Professor:</strong>{" "}
                             {professors.find(p => p.id === course.professorId)?.fullName || "N/A"}
                         </p>
                     </div>
@@ -619,61 +616,69 @@ const CourseDetailPage: React.FC = () => {
             </div>
 
             {/* Schedules Section */}
-            <div className="bg-white shadow-lg rounded-lg p-6 mb-8">
-                <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-semibold text-gray-700">Schedules</h2>
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-xl font-semibold text-gray-800">Schedules</h2>
                     <Button onClick={() => handleOpenScheduleModal("add")} variant="primary">
                         Add Schedule
                     </Button>
                 </div>
                 {course.schedules && course.schedules.length > 0 ? (
-                    <ul className="divide-y divide-gray-200">
+                    <div className="space-y-4">
                         {course.schedules.map(schedule => (
-                            <li key={schedule.id} className="py-4 flex justify-between items-center">
+                            <div
+                                key={schedule.id}
+                                className="flex justify-between items-center p-4 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors"
+                            >
                                 <div>
                                     <p className="font-medium text-gray-800">
                                         {daysOfWeek[schedule.dayOfWeek]} from {schedule.startTime} to {schedule.endTime}
                                     </p>
-                                    <p className="text-sm text-gray-500">Classroom: {schedule.classroomName}</p>
+                                    <p className="text-sm text-gray-600">Classroom: {schedule.classroomName}</p>
                                 </div>
-                                <div className="space-x-2">
+                                <div className="flex space-x-2">
                                     <Button
                                         variant="secondary"
                                         onClick={() => handleOpenScheduleModal("edit", schedule)}
+                                        className="cursor-pointer"
                                     >
                                         Edit
                                     </Button>
                                     <Button
                                         variant="danger"
                                         onClick={() => handleDeleteAction("schedule", schedule.id)}
+                                        className="cursor-pointer"
                                     >
                                         Delete
                                     </Button>
                                 </div>
-                            </li>
+                            </div>
                         ))}
-                    </ul>
+                    </div>
                 ) : (
-                    <p className="text-gray-500 italic">No schedules defined for this course.</p>
+                    <p className="text-gray-600 italic">No schedules defined for this course.</p>
                 )}
             </div>
 
             {/* Enrollments Section */}
-            <div className="bg-white shadow-lg rounded-lg p-6">
-                <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-semibold text-gray-700">Enrollments</h2>
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-xl font-semibold text-gray-800">Enrollments</h2>
                     <Button onClick={() => handleOpenEnrollmentModal("add")} variant="primary">
                         Add Enrollment
                     </Button>
                 </div>
                 {course.enrollments && course.enrollments.length > 0 ? (
-                    <ul className="divide-y divide-gray-200">
+                    <div className="space-y-4">
                         {course.enrollments.map(enrollment => (
-                            <li key={enrollment.id} className="py-4">
+                            <div
+                                key={enrollment.id}
+                                className="p-4 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors"
+                            >
                                 <div className="flex justify-between items-start">
-                                    <div>
+                                    <div className="space-y-1">
                                         <p className="font-medium text-gray-800">Student: {enrollment.studentName}</p>
-                                        <p className="text-sm text-gray-500">
+                                        <p className="text-sm text-gray-600">
                                             Status:{" "}
                                             <span
                                                 className={`capitalize px-2 py-0.5 rounded-full text-xs font-semibold ${
@@ -685,20 +690,22 @@ const CourseDetailPage: React.FC = () => {
                                                 {enrollment.status}
                                             </span>
                                         </p>
-                                        <p className="text-sm text-gray-500">
+                                        <p className="text-sm text-gray-600">
                                             Enrolled: {new Date(enrollment.enrollmentDate).toLocaleDateString()}
                                         </p>
                                     </div>
-                                    <div className="space-x-2 flex-shrink-0">
+                                    <div className="flex space-x-2 flex-shrink-0">
                                         <Button
                                             variant="secondary"
                                             onClick={() => handleOpenEnrollmentModal("edit", enrollment)}
+                                            className="cursor-pointer"
                                         >
                                             Edit
                                         </Button>
                                         <Button
                                             variant="danger"
                                             onClick={() => handleDeleteAction("enrollment", enrollment.id)}
+                                            className="cursor-pointer"
                                         >
                                             Delete
                                         </Button>
@@ -708,16 +715,17 @@ const CourseDetailPage: React.FC = () => {
                                     enrollment.grade2 !== undefined ||
                                     enrollment.grade3 !== undefined ||
                                     enrollment.finalGrade !== undefined) && (
-                                    <div className="mt-2 pt-2 border-t border-gray-200 text-xs text-gray-600">
-                                        Grades: G1: {enrollment.grade1 ?? "–"}, G2: {enrollment.grade2 ?? "–"}, G3:{" "}
+                                    <div className="mt-3 pt-3 border-t border-gray-100 text-sm text-gray-600">
+                                        <span className="font-medium text-gray-700">Grades:</span> G1:{" "}
+                                        {enrollment.grade1 ?? "–"}, G2: {enrollment.grade2 ?? "–"}, G3:{" "}
                                         {enrollment.grade3 ?? "–"}, Final: {enrollment.finalGrade ?? "–"}
                                     </div>
                                 )}
-                            </li>
+                            </div>
                         ))}
-                    </ul>
+                    </div>
                 ) : (
-                    <p className="text-gray-500 italic">No students enrolled in this course.</p>
+                    <p className="text-gray-600 italic">No students enrolled in this course.</p>
                 )}
             </div>
 
