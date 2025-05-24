@@ -81,7 +81,7 @@ const CourseListPage: React.FC = () => {
                 course.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 course.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 false ||
-                `${course.professor?.firstName} ${course.professor?.lastName}`
+                `${course.professor?.fullName}`
                     .toLowerCase()
                     .includes(searchTerm.toLowerCase()) ||
                 false
@@ -296,7 +296,7 @@ const CourseListPage: React.FC = () => {
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                                         {course.professor
-                                            ? `${course.professor?.firstName} ${course.professor?.lastName}`
+                                            ? `${course.professor?.fullName}`
                                             : "—"}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">

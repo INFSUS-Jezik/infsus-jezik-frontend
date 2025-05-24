@@ -1,9 +1,10 @@
 // Schedule model based on API responses
+import type {Classroom} from "./classroom.ts";
+
 export interface Schedule {
     id: number;
     courseId: number;
-    classroomId: number;
-    classroomName: string;
+    classroom: Classroom;
     dayOfWeek: number; // INTEGER in backend
     startTime: string; // TIME format, e.g. "09:00"
     endTime: string; // TIME format, e.g. "11:00"

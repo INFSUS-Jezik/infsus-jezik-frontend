@@ -23,7 +23,7 @@ export const validateEnrollment = (formData: EnrollmentValidationInput): Enrollm
         errors.studentId = "Student is required.";
     }
 
-    if (formData.status && !["active", "completed"].includes(formData.status)) {
+    if (formData.status && !["ACTIVE", "COMPLETED"].includes(formData.status)) {
         errors.status = "Status must be either 'active' or 'completed'.";
     }
 

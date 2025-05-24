@@ -103,7 +103,7 @@ const CourseDetailPage: React.FC = () => {
     const [enrollmentModalMode, setEnrollmentModalMode] = useState<"add" | "edit">("add");
     const [currentEnrollmentFormData, setCurrentEnrollmentFormData] = useState<EnrollmentModalFormData>({
         studentId: 0,
-        status: "active",
+        status: "ACTIVE",
     });
     const [editingEnrollmentId, setEditingEnrollmentId] = useState<number | null>(null);
     const [students, setStudents] = useState<Student[]>([]);
@@ -225,7 +225,7 @@ const CourseDetailPage: React.FC = () => {
         setScheduleModalMode(mode);
         if (mode === "edit" && schedule) {
             setCurrentScheduleFormData({
-                classroomId: schedule.classroomId,
+                classroomId: schedule.classroom.id,
                 dayOfWeek: schedule.dayOfWeek,
                 startTime: schedule.startTime,
                 endTime: schedule.endTime,
@@ -284,7 +284,7 @@ const CourseDetailPage: React.FC = () => {
         setEnrollmentModalMode(mode);
         if (mode === "edit" && enrollment) {
             setCurrentEnrollmentFormData({
-                studentId: enrollment.studentId, // studentId is part of Enrollment, not EnrollmentUpdateDTO
+                studentId: enrollment.student.id, // studentId is part of Enrollment, not EnrollmentUpdateDTO
                 status: enrollment.status,
                 grade1: enrollment.grade1,
                 grade2: enrollment.grade2,
@@ -293,7 +293,7 @@ const CourseDetailPage: React.FC = () => {
             });
             setEditingEnrollmentId(enrollment.id);
         } else {
-            setCurrentEnrollmentFormData({ studentId: 0, status: "active" });
+            setCurrentEnrollmentFormData({ studentId: 0, status: "ACTIVE" });
             setEditingEnrollmentId(null);
         }
         setEnrollmentFormErrors({});
@@ -609,7 +609,7 @@ const CourseDetailPage: React.FC = () => {
                         </p>
                         <p className="text-gray-600">
                             <strong className="font-medium !text-gray-800">Professor:</strong>{" "}
-                            {professors.find(p => p.id === course.professorId)?.fullName || "N/A"}
+                            {professors.find(p => p.id === course?.professor?.id)?.fullName || "N/A"}
                         </p>
                     </div>
                 )}
@@ -634,7 +634,7 @@ const CourseDetailPage: React.FC = () => {
                                     <p className="font-medium text-gray-800">
                                         {daysOfWeek[schedule.dayOfWeek]} from {schedule.startTime} to {schedule.endTime}
                                     </p>
-                                    <p className="text-sm text-gray-600">Classroom: {schedule.classroomName}</p>
+                                    <p className="text-sm text-gray-600">Classroom: {schedule.classroom.name}</p>
                                 </div>
                                 <div className="flex space-x-2">
                                     <Button
@@ -677,12 +677,12 @@ const CourseDetailPage: React.FC = () => {
                             >
                                 <div className="flex justify-between items-start">
                                     <div className="space-y-1">
-                                        <p className="font-medium text-gray-800">Student: {enrollment.studentName}</p>
+                                        <p className="font-medium text-gray-800">Student: {enrollment.student.firstName} {enrollment.student.lastName}</p>
                                         <p className="text-sm text-gray-600">
                                             Status:{" "}
                                             <span
                                                 className={`capitalize px-2 py-0.5 rounded-full text-xs font-semibold ${
-                                                    enrollment.status === "active"
+                                                    enrollment.status === "ACTIVE"
                                                         ? "bg-green-100 text-green-700"
                                                         : "bg-blue-100 text-blue-700"
                                                 }`}
@@ -786,8 +786,8 @@ const CourseDetailPage: React.FC = () => {
                             students.map(s => ({ value: s.id, label: `${s.firstName} ${s.lastName}` }))
                         )}
                     {renderEnrollmentFormField("status", "Status", "select", [
-                        { value: "active", label: "Active" },
-                        { value: "completed", label: "Completed" },
+                        { value: "ACTIVE", label: "Active" },
+                        { value: "COMPLETED", label: "Completed" },
                     ])}
                     {/* Grades are typically for edit mode; for create, they are usually not set or are optional */}
                     {enrollmentModalMode === "edit" && (

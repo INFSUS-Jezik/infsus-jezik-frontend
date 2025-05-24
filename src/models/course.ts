@@ -1,4 +1,4 @@
-import type { Professor } from "./professor";
+import type {ProfessorListDTO} from "./professor";
 import type { Schedule } from "./schedule";
 import type { Enrollment } from "./enrollment";
 
@@ -9,7 +9,7 @@ export interface Course {
     description?: string;
     price: number;
     professorId: number;
-    professor?: Professor; // Full Professor object for list view
+    professor?: ProfessorListDTO; // Full Professor object for list view
     schedules?: Schedule[];
     enrollments?: Enrollment[];
 }

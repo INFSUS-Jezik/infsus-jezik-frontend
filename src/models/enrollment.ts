@@ -1,11 +1,12 @@
 // Enrollment status as string literal type based on API
-export type EnrollmentStatus = "active" | "completed";
+import type {Student} from "./student.ts";
+
+export type EnrollmentStatus = "ACTIVE" | "COMPLETED";
 
 // Enrollment model based on API responses
 export interface Enrollment {
     id: number;
-    studentId: number;
-    studentName: string;
+    student: Student;
     courseId: number;
     enrollmentDate: string; // TIMESTAMP format
     status: EnrollmentStatus;
