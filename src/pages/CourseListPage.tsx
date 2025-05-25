@@ -84,9 +84,7 @@ const CourseListPage: React.FC = () => {
                 course.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 course.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 false ||
-                `${course.professor?.fullName}`
-                    .toLowerCase()
-                    .includes(searchTerm.toLowerCase()) ||
+                `${course.professor?.fullName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 false
         );
     }, [courses, searchTerm]);
@@ -105,7 +103,7 @@ const CourseListPage: React.FC = () => {
             name: course.name,
             description: course.description || "",
             price: course.price,
-            professorId: course.professorId,
+            professorId: course?.professor?.id ?? 0,
         });
         setEditingCourseId(course.id);
         setFormErrors({}); // Clear errors
@@ -176,6 +174,7 @@ const CourseListPage: React.FC = () => {
             const backendMessage = getErrorMessage(err, "Unknown error");
             setError(`Failed to ${modalMode === "add" ? "create" : "update"} course. ${backendMessage}`);
             console.error(err);
+            handleCloseModal();
         } finally {
             setIsLoading(false);
         }
@@ -300,9 +299,7 @@ const CourseListPage: React.FC = () => {
                                         ${course.price.toFixed(2)}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                        {course.professor
-                                            ? `${course.professor?.fullName}`
-                                            : "—"}
+                                        {course.professor ? `${course.professor?.fullName}` : "—"}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                                         {formatScheduleSummary(course)}

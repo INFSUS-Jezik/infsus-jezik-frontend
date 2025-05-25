@@ -160,12 +160,12 @@ const CourseDetailPage: React.FC = () => {
     }, [courseIdParam]);
 
     const handleMasterEditToggle = () => {
-        if (isEditingMaster && course) {
+        if (!isEditingMaster && course) {
             setMasterFormData({
                 name: course.name,
                 description: course.description || "",
                 price: course.price,
-                professorId: course.professorId,
+                professorId: course?.professor?.id ?? 0,
             });
         }
         setMasterFormErrors({});
@@ -276,6 +276,7 @@ const CourseDetailPage: React.FC = () => {
             const backendMessage = getErrorMessage(err, "Unknown error");
             setError(`Failed to save schedule. ${backendMessage}`);
             console.error(err);
+            setIsScheduleModalOpen(false); // Close modal so user can see the error
         } finally {
             setIsLoading(false);
         }
@@ -376,6 +377,7 @@ const CourseDetailPage: React.FC = () => {
             const backendMessage = getErrorMessage(err, "Unknown error");
             setError(`Failed to save enrollment. ${backendMessage}`);
             console.error(err);
+            setIsEnrollmentModalOpen(false);
         } finally {
             setIsLoading(false);
         }
@@ -403,6 +405,7 @@ const CourseDetailPage: React.FC = () => {
             const backendMessage = getErrorMessage(err, "Unknown error");
             setError(`Failed to delete ${deleteTarget.type}. ${backendMessage}`);
             console.error(err);
+            setIsDeleteDialogOpen(false);
         } finally {
             setIsLoading(false);
             setIsDeleteDialogOpen(false);
@@ -680,7 +683,9 @@ const CourseDetailPage: React.FC = () => {
                             >
                                 <div className="flex justify-between items-start">
                                     <div className="space-y-1">
-                                        <p className="font-medium text-gray-800">Student: {enrollment.student.firstName} {enrollment.student.lastName}</p>
+                                        <p className="font-medium text-gray-800">
+                                            Student: {enrollment.student.firstName} {enrollment.student.lastName}
+                                        </p>
                                         <p className="text-sm text-gray-600">
                                             Status:{" "}
                                             <span

@@ -114,6 +114,7 @@ const ClassroomListPage: React.FC = () => {
             const backendMessage = getErrorMessage(err, "Unknown error");
             setError(`Failed to ${modalMode === "add" ? "create" : "update"} classroom. ${backendMessage}`);
             console.error(err);
+            handleCloseModal(); // Close modal so user can see the error
         } finally {
             setIsLoading(false);
         }
@@ -141,6 +142,7 @@ const ClassroomListPage: React.FC = () => {
             const backendMessage = getErrorMessage(err, "Unknown error");
             setError(`Failed to delete classroom. ${backendMessage}`);
             console.error(err);
+            handleCloseDeleteDialog(); // Close dialog so user can see the error
         } finally {
             setIsLoading(false);
         }

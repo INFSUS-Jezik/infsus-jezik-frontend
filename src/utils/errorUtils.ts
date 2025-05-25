@@ -5,6 +5,7 @@
  * @returns A string containing the error message
  */
 export function getErrorMessage(error: unknown, fallbackMessage: string = "An unexpected error occurred"): string {
+    // Check for axios error with response.data.error
     if (
         error &&
         typeof error === "object" &&
@@ -14,12 +15,13 @@ export function getErrorMessage(error: unknown, fallbackMessage: string = "An un
         "data" in error.response &&
         error.response.data &&
         typeof error.response.data === "object" &&
-        "message" in error.response.data &&
-        typeof (error.response.data as { message?: unknown }).message === "string"
+        "error" in error.response.data &&
+        typeof (error.response.data as { error?: unknown }).error === "string"
     ) {
-        return (error.response.data as { message: string }).message;
+        return (error.response.data as { error: string }).error;
     }
 
+    // Check for direct message property
     if (
         error &&
         typeof error === "object" &&
