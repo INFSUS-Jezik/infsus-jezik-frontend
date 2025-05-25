@@ -238,6 +238,7 @@ const ClassroomListPage: React.FC = () => {
                     <div>
                         <InputField
                             label="Name"
+                            id="classroomName"
                             name="name"
                             value={currentFormData.name}
                             onChange={handleFormChange}
@@ -248,6 +249,7 @@ const ClassroomListPage: React.FC = () => {
                     <div>
                         <InputField
                             label="Abbreviation"
+                            id="classroomAbbreviation"
                             name="abbreviation"
                             value={currentFormData.abbreviation}
                             onChange={handleFormChange}

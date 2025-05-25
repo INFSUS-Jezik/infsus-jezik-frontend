@@ -348,6 +348,7 @@ const CourseListPage: React.FC = () => {
                     <div>
                         <InputField
                             label="Name"
+                            id="courseName"
                             name="name"
                             value={currentFormData.name}
                             onChange={handleInputChange}
@@ -358,6 +359,7 @@ const CourseListPage: React.FC = () => {
                     <div>
                         <InputField
                             label="Description"
+                             id="courseDescription"
                             name="description"
                             value={currentFormData.description || ""}
                             onChange={handleInputChange}
@@ -366,6 +368,7 @@ const CourseListPage: React.FC = () => {
                     <div>
                         <InputField
                             label="Price"
+                            id="coursePrice"
                             name="price"
                             type="number"
                             step="0.01"
@@ -378,6 +381,7 @@ const CourseListPage: React.FC = () => {
                     <div>
                         <SelectDropdown
                             label="Professor"
+                            id="courseProfessor"
                             name="professorId"
                             value={currentFormData.professorId || ""}
                             onChange={handleSelectChange}
